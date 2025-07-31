@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: mk-bot-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mkbot
+      MONGO_INITDB_ROOT_PASSWORD: mkbot123
+      MONGO_INITDB_DATABASE: telegram-referral-bot
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - "27017:27017"
+    networks:
+      - mk-bot-network
+
+  mk-bot:
+    build: .
+    container_name: mk-bot-app
+    restart: unless-stopped
+    depends_on:
+      - mongodb
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mkbot:mkbot123@mongodb:27017/telegram-referral-bot?authSource=admin
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - mk-bot-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  mk-bot-network:
+    driver: bridge
+
